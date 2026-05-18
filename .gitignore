@@ -1,0 +1,43 @@
+# Environment — NEVER commit
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.screenshot
+*.pem
+private.pem
+public.pem
+
+# Node
+node_modules/
+dist/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Contracts
+artifacts/
+cache/
+typechain-types/
+contracts/node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Docker volumes (if accidentally created locally)
+mysql_data/
+redis_data/
+
+# Test coverage
+coverage/
+.nyc_output/

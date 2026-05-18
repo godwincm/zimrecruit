@@ -1,0 +1,51 @@
+const fs = require('fs');
+const { generateKeyPairSync } = require('crypto');
+const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicKeyEncoding: { type: 'pkcs1', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+});
+
+const env = `NODE_ENV=development
+PORT=4000
+APP_BASE_URL=http://localhost:3000
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DATABASE=zimrecruit
+MYSQL_USER=zimrecruit
+MYSQL_PASSWORD=zimrecruitsecret
+MYSQL_ROOT_PASSWORD=rootsecret
+MYSQL_SSL=false
+REDIS_URL=redis://:redissecret@localhost:6379
+REDIS_PASSWORD=redissecret
+APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+APPWRITE_PROJECT_ID=demo
+APPWRITE_API_KEY=demo
+APPWRITE_BUCKET_DOCS=documents
+JWT_PRIVATE_KEY_PEM="${privateKey.replace(/\n/g, '\\n')}"
+JWT_PUBLIC_KEY_PEM="${publicKey.replace(/\n/g, '\\n')}"
+JWT_ACCESS_TTL=15m
+JWT_REFRESH_TTL=7d
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=demo@example.com
+SMTP_PASS=demo
+MAIL_FROM="ZimRecruit <noreply@zimrecruit.co.zw>"
+NEXT_PUBLIC_DEMO_MODE=true
+BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545
+BLOCKCHAIN_CHAIN_ID=31337
+VERIFIER_PRIVATE_KEY=0x0000000000000000000000000000000000000000000000000000000000000000
+VERIFIER_WALLET_ADDRESS=0x0000000000000000000000000000000000000000
+CONTRACT_ADDRESS=0x0000000000000000000000000000000000000000
+GAS_LIMIT=250000
+PLATFORM_ADMIN_ADDRESS=0x0000000000000000000000000000000000000000
+DEPLOYER_PRIVATE_KEY=0x0000000000000000000000000000000000000000000000000000000000000000
+NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+NEXT_PUBLIC_APPWRITE_PROJECT=demo
+NEXT_PUBLIC_APPWRITE_BUCKET_DOCS=documents
+NEXT_PUBLIC_CONTRACT_ADDRESS=0x0000000000000000000000000000000000000000
+NEXT_PUBLIC_CHAIN_ID=31337
+`;
+fs.writeFileSync('.env.screenshot', env);
+console.log('wrote .env.screenshot');

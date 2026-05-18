@@ -1,0 +1,188 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme sampled from the supplied sign-in mockup */
+    --bg:             #fbfcfb;
+    --surface:        #ffffff;
+    --surface-raised: #ffffff;
+    --muted:          #f4f7f5;
+    --border:         #d9dfdb;
+    --fg:             #10241b;
+    --fg-muted:       #5c6862;
+    --fg-hint:        #8d9792;
+    --primary:        #186840;
+    --primary-2:      #0f4f31;
+    --primary-fade:   #e8f3ed;
+    --accent:         #c49a2e;
+    --accent-2:       #e1b44f;
+    --accent-fade:    #fff7d7;
+    --danger:         #a5162c;
+    --success:        #2f9f5b;
+    --ring:           rgb(24 104 64 / 20%);
+    --shadow-card:    0 10px 30px rgb(16 36 27 / 9%);
+  }
+
+  .dark {
+    /* Dark theme sampled from the supplied employer console mockup */
+    --bg:             #0d0f0e;
+    --surface:        #151716;
+    --surface-raised: #1b1d1c;
+    --muted:          #202321;
+    --border:         #2d302e;
+    --fg:             #f3f4f1;
+    --fg-muted:       #babfba;
+    --fg-hint:        #858b87;
+    --primary:        #9b172b;
+    --primary-2:      #781421;
+    --primary-fade:   #2a1117;
+    --accent:         #e0b050;
+    --accent-2:       #f0c766;
+    --accent-fade:    #2f260f;
+    --danger:         #e64b61;
+    --success:        #50c878;
+    --ring:           rgb(224 176 80 / 24%);
+    --shadow-card:    0 14px 38px rgb(0 0 0 / 28%);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background-color: var(--bg);
+    color: var(--fg);
+    min-width: 0;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Sora', sans-serif;
+    letter-spacing: 0;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar          { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track    { background: transparent; }
+  ::-webkit-scrollbar-thumb    { background: #cbd5e1; border-radius: 3px; }
+  .dark ::-webkit-scrollbar-thumb { background: #383d3a; }
+}
+
+@layer components {
+  /* Card */
+  .card {
+    @apply rounded-md border border-[var(--border)] bg-[var(--surface)] shadow-card;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-5 py-2.5
+           font-sora text-sm font-bold text-white transition-all
+           hover:brightness-90 active:scale-95;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-md border border-[var(--border)]
+           px-5 py-2.5 text-sm font-semibold text-[var(--fg)] transition-all
+           hover:bg-[var(--muted)] active:scale-95;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full rounded-md border border-[var(--border)] bg-[var(--surface)]
+           px-4 py-3 text-sm text-[var(--fg)] outline-none transition-all
+           placeholder:text-[var(--fg-hint)]
+           focus:border-[var(--primary)] focus:ring-2 focus:ring-[color:var(--ring)];
+  }
+
+  /* Label */
+  .label { @apply mb-1.5 block text-sm font-semibold text-[var(--fg)]; }
+
+  /* Pill badge */
+  .badge-green  { @apply rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700; }
+  .badge-gold   { @apply rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-bold text-yellow-700; }
+  .badge-red    { @apply rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700; }
+  .badge-blue   { @apply rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700; }
+  .badge-gray   { @apply rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500; }
+
+  /* Verified badge */
+  .verified-badge {
+    @apply inline-flex items-center gap-1 rounded-full bg-[var(--primary-fade)] px-2 py-0.5
+           text-xs font-bold text-[var(--primary)];
+  }
+
+  .wire-panel {
+    @apply rounded border border-neutral-900 bg-white text-neutral-950 shadow-none dark:border-[var(--border)] dark:bg-[var(--surface)] dark:text-[var(--fg)];
+  }
+
+  .wire-title {
+    @apply border-b border-neutral-900 px-3 py-2 font-sora text-sm font-bold uppercase text-neutral-950 dark:border-[var(--border)] dark:text-[var(--fg)];
+  }
+
+  .wire-field {
+    @apply rounded-none border border-neutral-900 bg-white px-3 py-2 text-sm text-neutral-950 outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[color:var(--ring)] dark:border-[var(--border)] dark:bg-[var(--bg)] dark:text-[var(--fg)];
+  }
+
+  .wire-button {
+    @apply inline-flex items-center justify-center gap-2 rounded border border-neutral-900 bg-[#eeecff] px-4 py-2 font-sora text-xs font-bold uppercase text-neutral-950 transition hover:bg-[#e3e0ff] active:scale-95 dark:border-[var(--border)] dark:bg-[var(--muted)] dark:text-[var(--fg)];
+  }
+
+  .wire-action {
+    @apply flex min-h-20 w-full items-center justify-center gap-3 rounded border-2 bg-[#eeecff] px-5 py-4 text-center font-sora text-base font-bold text-[var(--fg)] transition hover:bg-[var(--primary-fade)] dark:bg-[var(--muted)];
+    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+
+  .wire-action:hover {
+    border-color: var(--primary);
+  }
+
+  .wire-table {
+    @apply w-full border-collapse bg-white text-sm text-neutral-950 dark:bg-[var(--surface)] dark:text-[var(--fg)];
+  }
+
+  .wire-table th,
+  .wire-table td {
+    @apply border border-neutral-900 px-3 py-2 align-top dark:border-[var(--border)];
+  }
+
+  .wire-table th {
+    @apply bg-neutral-100 text-left font-sora text-xs font-bold uppercase dark:bg-[var(--muted)];
+  }
+
+  .report-sheet {
+    @apply rounded border border-neutral-900 bg-white p-4 text-neutral-950 shadow-none dark:border-[var(--border)] dark:bg-[var(--surface)] dark:text-[var(--fg)];
+  }
+}
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .report-sheet {
+    border: 0 !important;
+    box-shadow: none !important;
+    color: #111 !important;
+  }
+}
+
+@layer utilities {
+  .tracking-tight,
+  .tracking-wide,
+  .tracking-wider,
+  .tracking-widest {
+    letter-spacing: 0;
+  }
+}

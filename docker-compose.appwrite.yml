@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  appwrite:
+    image: appwrite/appwrite:1.5.8
+    container_name: appwrite
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - _APP_ENV=development
+      - _APP_OPTIONS_FORCE_HTTPS=disabled
+      - _APP_DOMAIN=localhost
+      - _APP_DOMAIN_TARGET=localhost
+      - _APP_REDIS_HOST=redis
+      - _APP_DB_HOST=mariadb
+      - _APP_INFLUXDB_HOST=influxdb
+    volumes:
+      - appwrite_data:/storage
+    depends_on:
+      - mariadb
+      - redis
+      - influxdb
+
+  mariadb:
+    image: mariadb:10.11
+    container_name: appwrite_mariadb
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=appwrite_root_password
+      - MYSQL_DATABASE=appwrite
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: appwrite_redis
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: appwrite_influxdb
+    restart: unless-stopped
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=appwrite
+      - DOCKER_INFLUXDB_INIT_PASSWORD=appwrite_password
+      - DOCKER_INFLUXDB_INIT_ORG=appwrite
+      - DOCKER_INFLUXDB_INIT_BUCKET=appwrite
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+
+volumes:
+  appwrite_data:
+  mariadb_data:
+  influxdb_data:

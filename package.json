@@ -1,0 +1,27 @@
+{
+  "name": "zimrecruit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Blockchain-powered recruitment & verification platform for Zimbabwe",
+  "workspaces": ["apps/*", "contracts"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "build": "npm run build -w apps/api && npm run build -w apps/web",
+    "lint": "eslint apps/*/src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json",
+    "test": "vitest run",
+    "test:contracts": "npm run test -w contracts",
+    "seed:admin": "npm run seed:admin -w apps/api",
+    "db:check": "npm run db:check -w apps/api",
+    "migrate": "node apps/api/dist/lib/migrate.js",
+    "db:schema": "mysql -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE < infra/docker/schema.sql"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.5.0"
+  }
+}
