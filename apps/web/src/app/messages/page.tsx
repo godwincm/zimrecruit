@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import toast from "react-hot-toast";
 
@@ -62,6 +62,9 @@ export default function MessagesPage() {
     }
 
     api.messages.list(activeId).then(result => setMessages(result.messages)).catch((err: Error) => toast.error(err.message));
+
+    if (!isSupabaseConfigured) return;
+
     const channel = supabase
       .channel(`messages:${activeId}`)
       .on(
