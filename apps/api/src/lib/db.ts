@@ -1,36 +1,60 @@
-import mysql from "mysql2/promise";
+import { Pool, type PoolClient, type QueryResult } from "pg";
 
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST ?? "localhost",
-  port: Number(process.env.MYSQL_PORT ?? 3306),
-  database: process.env.MYSQL_DATABASE ?? "zimrecruit",
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  ssl: process.env.MYSQL_SSL === "true" ? { rejectUnauthorized: true } : undefined,
-  waitForConnections: true,
-  connectionLimit: 20,
-  queueLimit: 0,
-  timezone: "Z",
-  dateStrings: false,
+type Params = readonly unknown[];
+type QueryTuple = [unknown[], QueryResult];
+
+export interface DbConnection {
+  query(sql: string, params?: Params): Promise<QueryTuple>;
+  execute(sql: string, params?: Params): Promise<QueryTuple>;
+}
+
+function translateParameters(sql: string): string {
+  let index = 0;
+  return sql.replace(/\?/g, () => `$${++index}`);
+}
+
+function requireConnectionString(): string {
+  const value = process.env.SUPABASE_DB_URL ?? process.env.DATABASE_URL;
+  if (!value) {
+    throw new Error("SUPABASE_DB_URL must be configured for the Supabase Postgres database.");
+  }
+  return value;
+}
+
+const pool = new Pool({
+  connectionString: requireConnectionString(),
+  ssl: process.env.SUPABASE_DB_SSL === "false" ? false : { rejectUnauthorized: false },
+  max: Number(process.env.SUPABASE_DB_POOL_MAX ?? 10),
 });
 
-export const db = {
-  query: pool.query.bind(pool),
-  execute: pool.execute.bind(pool),
-  close: pool.end.bind(pool),
+async function run(client: Pool | PoolClient, sql: string, params: Params = []): Promise<QueryTuple> {
+  const result = await client.query(translateParameters(sql), [...params]);
+  return [result.rows, result];
+}
 
-  async transaction<T>(fn: (conn: mysql.PoolConnection) => Promise<T>): Promise<T> {
-    const conn = await pool.getConnection();
-    await conn.beginTransaction();
+function connection(client: Pool | PoolClient): DbConnection {
+  return {
+    query: (sql, params) => run(client, sql, params),
+    execute: (sql, params) => run(client, sql, params),
+  };
+}
+
+export const db = {
+  ...connection(pool),
+  close: () => pool.end(),
+
+  async transaction<T>(fn: (conn: DbConnection) => Promise<T>): Promise<T> {
+    const client = await pool.connect();
+    await client.query("BEGIN");
     try {
-      const result = await fn(conn);
-      await conn.commit();
+      const result = await fn(connection(client));
+      await client.query("COMMIT");
       return result;
     } catch (err) {
-      await conn.rollback();
+      await client.query("ROLLBACK");
       throw err;
     } finally {
-      conn.release();
+      client.release();
     }
   },
 };

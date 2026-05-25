@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { getJwtPublicKey } from "../lib/jwtKeys.js";
 
 export interface JwtPayload {
   sub: string;         // users.id (UUID)
-  appwriteId: string;  // Appwrite user ID
+  supabaseUserId: string; // Supabase Auth user ID
   email: string;
   roles: Role[];
   iat: number;
@@ -20,7 +21,7 @@ declare global {
   }
 }
 
-const PUBLIC_KEY = (process.env.JWT_PUBLIC_KEY_PEM ?? "").replace(/\\n/g, "\n");
+const PUBLIC_KEY = getJwtPublicKey();
 
 /**
  * Verify the Bearer JWT issued by the auth module.
@@ -28,12 +29,20 @@ const PUBLIC_KEY = (process.env.JWT_PUBLIC_KEY_PEM ?? "").replace(/\\n/g, "\n");
  */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
+  const cookieToken = req.headers.cookie
+    ?.split(";")
+    .map(part => part.trim())
+    .find(part => part.startsWith("accessToken="))
+    ?.slice("accessToken=".length);
+  const token = header?.startsWith("Bearer ")
+    ? header.slice(7)
+    : cookieToken;
+
+  if (!token) {
     res.status(401).json({ error: "Missing or malformed Authorization header." });
     return;
   }
 
-  const token = header.slice(7);
   try {
     const payload = jwt.verify(token, PUBLIC_KEY, {
       algorithms: ["RS256"],

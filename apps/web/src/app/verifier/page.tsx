@@ -36,10 +36,10 @@ export default function VerifierQueuePage() {
   const approve = async (id: string) => {
     setActing(id);
     try {
-      const { txHash, blockNumber } = await api.verifications.approve(id);
-      toast.success(`Credential recorded - Block #${blockNumber.toLocaleString()}`);
+      const { receiptHash, sequenceNumber } = await api.verifications.approve(id);
+      toast.success(`Credential recorded - Ledger #${sequenceNumber.toLocaleString()}`);
       const item = queue.find(q => q.id === id);
-      if (item) setApproved(prev => [...prev, { ...item, txHash, blockNumber }]);
+      if (item) setApproved(prev => [...prev, { ...item, receiptHash, sequenceNumber }]);
       setQueue(prev => prev.filter(q => q.id !== id));
     } catch (err: any) {
       toast.error(err.message ?? "Approval failed.");
@@ -113,7 +113,7 @@ export default function VerifierQueuePage() {
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-semibold text-[var(--fg)]">Document SHA-256</span>
                       <a
-                          href={`${API_BASE}/api/documents/${item.appwrite_file_id}/stream`}
+                          href={`${API_BASE}/api/documents/${item.document_id}/stream`}
                         target="_blank"
                         className="text-xs text-[var(--primary)] font-semibold hover:underline"
                       >
@@ -155,7 +155,7 @@ export default function VerifierQueuePage() {
                   <span className="inline-flex items-center gap-1 font-semibold text-sm text-green-700 dark:text-green-400"><AppIcon name="Done" size={14} /> {item.applicant_name}</span>
                   <span className="text-sm text-green-800 dark:text-green-300 ml-2">{item.title}</span>
                   <div className="font-mono text-xs text-green-700 dark:text-green-400 mt-0.5">
-                    Tx: {item.txHash} | Block #{item.blockNumber.toLocaleString()}
+                    Receipt: {item.receiptHash} | Ledger #{item.sequenceNumber.toLocaleString()}
                   </div>
                 </div>
                 <VerifiedBadge />

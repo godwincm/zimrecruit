@@ -1,6 +1,4 @@
-import { ID } from "node-appwrite";
 import { v4 as uuidv4 } from "uuid";
-import { appwriteMessaging } from "./appwrite.js";
 import { db } from "./db.js";
 
 type RenderedMessage = {
@@ -33,25 +31,25 @@ function frame(title: string, body: string): string {
 }
 
 const TEMPLATES = {
-  verification_approved: (data: { txHash: string; docTitle: string }): RenderedMessage => {
+  verification_approved: (data: { receiptHash: string; docTitle: string }): RenderedMessage => {
     const docTitle = escapeHtml(data.docTitle);
-    const txHash = escapeHtml(data.txHash);
+    const receiptHash = escapeHtml(data.receiptHash);
     return {
       subject: "Your document has been verified - ZimRecruit",
       html: frame(
         "Document verified",
         `
-          <p>Your document <strong>${docTitle}</strong> has been verified and recorded on the local credential chain.</p>
+          <p>Your document <strong>${docTitle}</strong> has been verified and recorded in the Supabase mockchain ledger.</p>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:20px 0">
-            <p style="margin:0;font-size:13px;color:#166534"><strong>Transaction hash:</strong><br><code style="font-size:12px;word-break:break-all">${txHash}</code></p>
+            <p style="margin:0;font-size:13px;color:#166534"><strong>Receipt hash:</strong><br><code style="font-size:12px;word-break:break-all">${receiptHash}</code></p>
           </div>
           <p>You can verify this attestation from your ZimRecruit dashboard.</p>
         `
       ),
-      text: `Your document ${data.docTitle} has been verified. Transaction hash: ${data.txHash}`,
+      text: `Your document ${data.docTitle} has been verified. Receipt hash: ${data.receiptHash}`,
       notificationTitle: "Document verified",
       notificationBody: `${data.docTitle} has been verified.`,
-      link: "/dashboard/documents",
+      link: "/applicant/documents",
     };
   },
 
@@ -71,7 +69,7 @@ const TEMPLATES = {
       text: `Your document ${data.docTitle} could not be verified. Reason: ${data.reason}`,
       notificationTitle: "Document verification update",
       notificationBody: `${data.docTitle} was not verified: ${data.reason}`,
-      link: "/dashboard/documents",
+      link: "/applicant/documents",
     };
   },
 
@@ -95,7 +93,7 @@ const TEMPLATES = {
       text: `${data.company} scheduled an interview for ${data.jobTitle} on ${data.scheduledAt}. Location/link: ${data.location}`,
       notificationTitle: "Interview scheduled",
       notificationBody: `${data.company} scheduled an interview for ${data.jobTitle} on ${data.scheduledAt}.`,
-      link: "/dashboard/applications",
+      link: "/applicant/applications",
     };
   },
 
@@ -114,7 +112,7 @@ const TEMPLATES = {
       text: `${data.company} accepted your application for the next stage of ${data.jobTitle}.`,
       notificationTitle: "Application accepted",
       notificationBody: `${data.company} accepted your application for the next stage of ${data.jobTitle}.`,
-      link: "/dashboard/applications",
+      link: "/applicant/applications",
     };
   },
 
@@ -128,13 +126,13 @@ const TEMPLATES = {
         `
           <p><strong>${company}</strong> has extended a job offer for the <strong>${jobTitle}</strong> role.</p>
           <p>Log in to your ZimRecruit dashboard to view and respond to the offer.</p>
-          <p><a href="${appBaseUrl()}/dashboard/applications" style="display:inline-block;padding:12px 20px;background:#0f766e;color:#fff;border-radius:6px;text-decoration:none;font-weight:700">View offer</a></p>
+          <p><a href="${appBaseUrl()}/applicant/applications" style="display:inline-block;padding:12px 20px;background:#0f766e;color:#fff;border-radius:6px;text-decoration:none;font-weight:700">View offer</a></p>
         `
       ),
       text: `${data.company} has extended a job offer for ${data.jobTitle}. Log in to view it.`,
       notificationTitle: "Offer extended",
       notificationBody: `${data.company} extended an offer for ${data.jobTitle}.`,
-      link: "/dashboard/applications",
+      link: "/applicant/applications",
     };
   },
 
@@ -155,7 +153,7 @@ const TEMPLATES = {
       text: `An administrator issued a warning on your ZimRecruit account. Reason: ${data.reason}${data.details ? `. Details: ${data.details}` : ""}`,
       notificationTitle: "Account warning",
       notificationBody: data.details ? `${data.reason}: ${data.details}` : data.reason,
-      link: "/dashboard/notifications",
+      link: "/applicant/profile",
     };
   },
 } as const;
@@ -182,52 +180,12 @@ async function createInAppNotification(
   );
 }
 
-export async function sendEmail<T extends TemplateName>(
-  templateName: T,
-  appwriteUserId: string,
-  data: TemplateData<T>
-): Promise<void> {
-  const message = (TEMPLATES[templateName] as (d: typeof data) => RenderedMessage)(data);
-  await appwriteMessaging.createEmail(
-    ID.unique(),
-    message.subject,
-    message.html,
-    [],
-    [appwriteUserId],
-    [],
-    [],
-    [],
-    [],
-    false,
-    true
-  );
-}
-
-/** Look up a user's Appwrite account and dispatch an Appwrite email plus in-app notification. */
-export async function sendEmailToUser<T extends TemplateName>(
+/** Persist an in-app notification; Supabase Realtime makes it immediately observable by the recipient. */
+export async function notifyUser<T extends TemplateName>(
   templateName: T,
   userId: string,
   data: TemplateData<T>
 ): Promise<void> {
   const message = (TEMPLATES[templateName] as (d: typeof data) => RenderedMessage)(data);
   await createInAppNotification(userId, templateName, message);
-
-  const [rows] = await db.query("SELECT appwrite_id FROM users WHERE id = ? LIMIT 1", [userId]);
-  const user = (rows as { appwrite_id: string | null }[])[0];
-  if (!user) throw new Error(`User ${userId} not found; cannot send Appwrite email.`);
-  if (!user.appwrite_id) throw new Error(`User ${userId} has no Appwrite account id; cannot send Appwrite email.`);
-
-  await appwriteMessaging.createEmail(
-    ID.unique(),
-    message.subject,
-    message.html,
-    [],
-    [user.appwrite_id],
-    [],
-    [],
-    [],
-    [],
-    false,
-    true
-  );
 }

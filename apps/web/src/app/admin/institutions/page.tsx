@@ -14,7 +14,7 @@ const ADMIN_EXTRA_NAV = [
   { href: "/admin/system-health", label: "System Health", icon: "Health" },
   { href: "/admin/fraud-warnings", label: "Fraud Warnings", icon: "Warn" },
   { href: "/admin/companies", label: "Companies", icon: "Co" },
-  { href: "/admin/smart-contracts", label: "Smart Contracts", icon: "Chain" },
+  { href: "/admin/supabase-ledger", label: "Supabase Ledger", icon: "Chain" },
 ];
 
 const NAV = [
@@ -26,7 +26,6 @@ const NAV = [
 const schema = z.object({
   name:          z.string().min(3),
   category:      z.enum(["zrp", "medical", "education"]),
-  walletAddress: z.string().regex(/^0x[0-9a-fA-F]{40}$/, "Invalid Ethereum address"),
   contactEmail:  z.string().email(),
 });
 
@@ -114,14 +113,6 @@ export default function InstitutionsPage() {
               <input {...register("contactEmail")} type="email" placeholder="verify@institution.ac.zw" className="input" />
               <Err msg={errors.contactEmail?.message} />
             </div>
-            <div className="md:col-span-2">
-              <label className="label">Verifier Wallet Address</label>
-              <input {...register("walletAddress")} placeholder="0x..." className="input font-mono text-sm" />
-              <Err msg={errors.walletAddress?.message} />
-              <p className="mt-1 text-xs text-[var(--fg-muted)]">
-                This address will be granted VERIFIER_ROLE on the smart contract.
-              </p>
-            </div>
             <div className="md:col-span-2 flex gap-3">
               <button type="submit" disabled={saving} className="btn-primary">
                 {saving ? <><Spinner size={15} /> Saving...</> : "Onboard Institution"}
@@ -166,7 +157,7 @@ export default function InstitutionsPage() {
                   </div>
                   <div className="mt-3 flex flex-wrap gap-4 text-xs text-[var(--fg-muted)]">
                     <span className="inline-flex items-center gap-1"><AppIcon name="mail" size={13} /> {inst.contact_email}</span>
-                    <span className="font-mono">Wallet: {inst.wallet_address ?? "not set"}</span>
+                    <span>Supabase mockchain verification enabled</span>
                   </div>
                 </div>
               </div>

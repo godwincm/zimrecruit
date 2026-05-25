@@ -45,11 +45,11 @@ jobsRouter.get(
     if (industry) { sql += " AND j.industry = ?"; params.push(industry); }
     if (qualification) { sql += " AND j.qualification = ?"; params.push(qualification); }
     if (search) {
-      sql += " AND MATCH(j.title, j.description) AGAINST(? IN BOOLEAN MODE)";
-      params.push(search + "*");
+      sql += " AND to_tsvector('english', j.title || ' ' || j.description) @@ plainto_tsquery('english', ?)";
+      params.push(search);
     }
 
-    sql += " GROUP BY j.id ORDER BY j.created_at DESC LIMIT ? OFFSET ?";
+    sql += " GROUP BY j.id, ep.company_name, ep.location, ep.logo_file_id ORDER BY j.created_at DESC LIMIT ? OFFSET ?";
     params.push(Number(limit), Number(offset));
 
     const [rows] = await db.query(sql, params);
@@ -72,17 +72,17 @@ jobsRouter.get(
     }
 
     if (search.trim()) {
-      where.push("(u.full_name LIKE ? OR ap.headline LIKE ? OR ap.location LIKE ? OR JSON_SEARCH(ap.skills, 'one', ?) IS NOT NULL)");
+      where.push("(u.full_name ILIKE ? OR ap.headline ILIKE ? OR ap.location ILIKE ? OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(COALESCE(ap.skills, '[]'::jsonb)) skill WHERE skill ILIKE ?))");
       const like = `%${search.trim()}%`;
       params.push(like, like, like, like);
     }
 
     if (verifiedOnly === "true") {
       where.push(`EXISTS (
-        SELECT 1 FROM on_chain_attestations oca
+        SELECT 1 FROM mockchain_attestations oca
         JOIN verification_requests vr ON vr.id = oca.request_id
         JOIN documents d ON d.id = vr.document_id
-        WHERE d.applicant_id = u.id AND oca.revoked = 0
+        WHERE d.applicant_id = u.id AND oca.revoked = false
       )`);
     }
 
@@ -91,10 +91,10 @@ jobsRouter.get(
               u.id AS user_id, u.full_name, u.email, u.avatar_file_id,
               ap.headline, ap.location, ap.skills,
               j.id AS job_id, j.title AS job_title,
-              (SELECT COUNT(*) FROM on_chain_attestations oca
+              (SELECT COUNT(*) FROM mockchain_attestations oca
                JOIN verification_requests vr ON vr.id = oca.request_id
                JOIN documents d ON d.id = vr.document_id
-               WHERE d.applicant_id = u.id AND oca.revoked = 0) AS verified_docs
+               WHERE d.applicant_id = u.id AND oca.revoked = false) AS verified_docs
        FROM applications a
        JOIN jobs j ON j.id = a.job_id
        JOIN users u ON u.id = a.applicant_id
@@ -208,10 +208,10 @@ jobsRouter.get(
       `SELECT a.id AS application_id, a.status, a.cover_letter, a.created_at,
               u.id AS user_id, u.full_name, u.email, u.avatar_file_id,
               ap.headline, ap.location, ap.skills,
-              (SELECT COUNT(*) FROM on_chain_attestations oca
+              (SELECT COUNT(*) FROM mockchain_attestations oca
                JOIN verification_requests vr ON vr.id = oca.request_id
                JOIN documents d ON d.id = vr.document_id
-               WHERE d.applicant_id = u.id AND oca.revoked = 0) AS verified_docs
+               WHERE d.applicant_id = u.id AND oca.revoked = false) AS verified_docs
        FROM applications a
        JOIN users u ON u.id = a.applicant_id
        LEFT JOIN applicant_profiles ap ON ap.user_id = u.id

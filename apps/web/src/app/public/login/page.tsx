@@ -9,10 +9,11 @@ import toast from "react-hot-toast";
 import { Lock, Mail } from "lucide-react";
 import { Logo, PasswordInput, Spinner, ThemeToggle } from "@/components/ui";
 import { useAuthStore } from "@/hooks/useAuthStore";
+import { accountEmailSchema, strongPasswordSchema } from "@/lib/authValidation";
 
 const schema = z.object({
-  email: z.string().email("Enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: accountEmailSchema,
+  password: strongPasswordSchema,
 });
 
 type FormData = z.infer<typeof schema>;
@@ -44,20 +45,20 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--bg)] px-4 py-10">
-      <div className="pointer-events-none absolute -left-10 bottom-6 hidden h-72 w-72 rounded-full border border-[var(--border)] opacity-40 md:block" />
-      <div className="pointer-events-none absolute -right-12 bottom-12 hidden h-64 w-64 rounded-full border border-[var(--border)] opacity-40 md:block" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#10241b] px-4 py-10">
+      <div className="absolute inset-0 bg-[url('/auth-background.jpg')] bg-cover bg-center" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/60" />
 
-      <header className="absolute left-4 right-4 top-4 flex items-center justify-between sm:left-8 sm:right-8 sm:top-8">
+      <header className="absolute left-4 right-4 top-4 z-10 flex items-center justify-between sm:left-8 sm:right-8 sm:top-8">
         <Link href="/" className="shrink-0">
           <Logo />
-          <span className="ml-10 block text-xs font-medium text-[var(--fg-muted)]">Verified Recruitment Platform</span>
+          <span className="ml-10 block text-xs font-medium text-white/80">Verified Recruitment Platform</span>
         </Link>
         <ThemeToggle />
       </header>
 
-      <div className="w-full max-w-md pt-24">
-        <div className="card bg-[var(--surface-raised)] p-6 shadow-card sm:p-8">
+      <div className="relative z-10 w-full max-w-md pt-24">
+        <div className="card border-white/20 bg-white/92 p-6 shadow-card backdrop-blur-sm sm:p-8 dark:bg-[rgb(27_29_28_/_0.9)]">
           <div className="mb-8 text-center">
             <h1 className="font-sora text-2xl font-extrabold text-[var(--primary)]">Welcome back</h1>
             <p className="mt-2 text-sm text-[var(--fg-muted)]">Sign in to your ZimRecruit account</p>
@@ -91,6 +92,7 @@ export default function LoginPage() {
                 />
               </div>
               {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
+              <p className="mt-1 text-xs text-[var(--fg-muted)]">Use your confirmed email and a 12+ character password with mixed characters.</p>
             </div>
 
             <div className="text-right">

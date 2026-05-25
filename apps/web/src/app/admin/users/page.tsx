@@ -13,7 +13,7 @@ const NAV = [
   { href: "/admin/fraud-warnings", label: "Fraud Warnings", icon: "Warn" },
   { href: "/admin/institutions", label: "Institutions", icon: "Inst" },
   { href: "/admin/companies", label: "Companies", icon: "Co" },
-  { href: "/admin/smart-contracts", label: "Smart Contracts", icon: "Chain" },
+  { href: "/admin/supabase-ledger", label: "Supabase Ledger", icon: "Chain" },
 ];
 
 export default function AdminUsersPage() {

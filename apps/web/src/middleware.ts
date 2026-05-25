@@ -5,6 +5,7 @@ const PROTECTED: Array<{ path: string; roles: string[] }> = [
   { path: "/employer", roles: ["employer"] },
   { path: "/verifier", roles: ["verifier"] },
   { path: "/admin", roles: ["admin"] },
+  { path: "/messages", roles: ["applicant", "employer", "verifier", "admin"] },
 ];
 
 export function middleware(req: NextRequest) {
@@ -44,5 +45,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/applicant/:path*", "/employer/:path*", "/verifier/:path*", "/admin/:path*"],
+  matcher: ["/applicant/:path*", "/employer/:path*", "/verifier/:path*", "/admin/:path*", "/messages/:path*"],
 };

@@ -11,7 +11,7 @@ const NAV = [
   { href: "/admin/fraud-warnings", label: "Fraud Warnings", icon: "Warn" },
   { href: "/admin/institutions", label: "Institutions", icon: "Inst" },
   { href: "/admin/companies", label: "Companies", icon: "Co" },
-  { href: "/admin/smart-contracts", label: "Smart Contracts", icon: "Chain" },
+  { href: "/admin/supabase-ledger", label: "Supabase Ledger", icon: "Chain" },
 ];
 
 const SERVICES = [
@@ -19,7 +19,7 @@ const SERVICES = [
   ["API Server", "active", "112 ms"],
   ["Database", "active", "19 ms"],
   ["Storage", "active", "44 ms"],
-  ["Local Chain RPC", "active", "73 ms"],
+  ["Supabase Mockchain Ledger", "active", "21 ms"],
 ];
 
 export default function SystemHealthPage() {

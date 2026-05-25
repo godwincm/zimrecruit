@@ -15,6 +15,8 @@ dist/
 .next/
 .turbo/
 *.tsbuildinfo
+uploads/
+apps/api/uploads/
 
 # Contracts
 artifacts/
@@ -33,10 +35,6 @@ Thumbs.db
 # IDE
 .vscode/settings.json
 .idea/
-
-# Docker volumes (if accidentally created locally)
-mysql_data/
-redis_data/
 
 # Test coverage
 coverage/

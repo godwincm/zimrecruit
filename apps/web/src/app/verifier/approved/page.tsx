@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card, DocTypePill, SectionHeader, StatusPill, VerifiedBadge } from "@/components/ui";
+import { AppIcon, Card, DocTypePill, SectionHeader, Spinner, StatusPill, VerifiedBadge } from "@/components/ui";
+import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 const NAV = [
   { href: "/verifier", label: "Pending Requests", icon: "Queue" },
@@ -10,19 +12,21 @@ const NAV = [
   { href: "/verifier/profile", label: "Profile", icon: "Profile" },
 ];
 
-const REQUESTS = [
-  { id: "a1", applicant: "Tendai Mupfumira", docType: "education", title: "BSc Accounting - MSU 2024", status: "approved", txHash: "0x3fa2b9...e91c", blockNum: 131, date: "May 10, 2026" },
-  { id: "a2", applicant: "Chido Mutasa", docType: "education", title: "BSc Computer Science - UZ 2023", status: "approved", txHash: "0x1ab2c3...d4e5", blockNum: 128, date: "May 8, 2026" },
-  { id: "r1", applicant: "Blessing Nyoni", docType: "medical", title: "Medical Fitness Report", status: "rejected", reason: "Scan was unclear", date: "May 6, 2026" },
-  { id: "r2", applicant: "Farai Chipungu", docType: "police_clearance", title: "Police Clearance Certificate", status: "rejected", reason: "Expired certificate", date: "May 4, 2026" },
-];
-
 export default function ApprovedRejectedPage() {
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
 
-  const filtered = REQUESTS.filter((item) => {
-    const matchesText = `${item.applicant} ${item.title}`.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    api.verifications.processed()
+      .then(({ requests }) => setRequests(requests))
+      .catch((err: any) => toast.error(err.message ?? "Could not load processed requests."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = requests.filter((item) => {
+    const matchesText = `${item.applicant_name} ${item.title}`.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = status === "all" || item.status === status;
     return matchesText && matchesStatus;
   });
@@ -41,28 +45,38 @@ export default function ApprovedRejectedPage() {
         </select>
       </div>
 
-      <div className="space-y-3">
-        {filtered.map(item => (
-          <Card key={item.id} className="p-5">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm text-[var(--fg)]">{item.applicant}</span>
-                  <DocTypePill type={item.docType} />
-                  <StatusPill status={item.status} />
-                  {item.status === "approved" && <VerifiedBadge />}
-                </div>
-                <p className="text-sm text-[var(--fg-muted)] mt-0.5">{item.title}</p>
-                <div className="mt-1.5 font-mono text-xs text-[var(--fg-hint)]">
-                  {item.status === "approved"
-                    ? `Tx: ${item.txHash} - Block #${item.blockNum} - ${item.date}`
-                    : `Reason: ${item.reason} - ${item.date}`}
+      {loading ? (
+        <div className="flex h-48 items-center justify-center"><Spinner size={32} /></div>
+      ) : filtered.length === 0 ? (
+        <Card className="flex h-48 flex-col items-center justify-center gap-3 p-6 text-[var(--fg-muted)]">
+          <AppIcon name="Done" size={40} />
+          <p className="font-semibold text-[var(--fg)]">No processed requests found.</p>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(item => (
+            <Card key={item.id} className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-sm text-[var(--fg)]">{item.applicant_name}</span>
+                    <DocTypePill type={item.doc_type} />
+                    <StatusPill status={item.status} />
+                    {item.status === "approved" && <VerifiedBadge />}
+                  </div>
+                  <p className="text-sm text-[var(--fg-muted)] mt-0.5">{item.title}</p>
+                  <p className="text-xs text-[var(--fg-hint)] mt-1">{item.institution_name}</p>
+                  <div className="mt-1.5 font-mono text-xs text-[var(--fg-hint)] break-all">
+                    {item.status === "approved"
+                      ? `Receipt: ${item.receipt_hash ?? "pending"} - Ledger #${item.sequence_number ?? "-"} - ${new Date(item.decided_at ?? item.attested_at).toLocaleDateString("en-ZW")}`
+                      : `Reason: ${item.reason ?? "No reason recorded"} - ${new Date(item.decided_at ?? item.submitted_at).toLocaleDateString("en-ZW")}`}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </DashboardLayout>
   );
 }

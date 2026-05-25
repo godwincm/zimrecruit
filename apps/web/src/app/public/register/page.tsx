@@ -8,14 +8,15 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 import { Logo, PasswordInput, Spinner, ThemeToggle } from "@/components/ui";
 import { useAuthStore } from "@/hooks/useAuthStore";
+import { accountEmailSchema, strongPasswordSchema } from "@/lib/authValidation";
 
 const schema = z.object({
   fullName: z.string().min(2, "Enter your full name"),
   nationalId: z.string().min(6, "Enter national ID").optional().or(z.literal("")),
   dateOfBirth: z.string().optional(),
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string().min(8, "Confirm your password"),
+  email: accountEmailSchema,
+  password: strongPasswordSchema,
+  confirmPassword: z.string().min(1, "Confirm your password"),
   role: z.enum(["applicant", "verifier", "employer"]),
   companyName: z.string().optional(),
   institutionName: z.string().optional(),
@@ -51,7 +52,6 @@ export default function RegisterPage() {
         website: "",
         institutionName: data.institutionName ?? "",
         institutionCategory: "education",
-        institutionWallet: "",
       });
       toast.success("Account created! Welcome to ZimRecruit.");
       router.push(data.role === "employer" ? "/employer" : data.role === "verifier" ? "/verifier" : "/applicant");
@@ -66,17 +66,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] px-4 py-8">
-      <header className="mx-auto flex max-w-6xl items-center justify-between">
+    <main className="relative min-h-screen overflow-hidden bg-[#10241b] px-4 py-8">
+      <div className="absolute inset-0 bg-[url('/auth-background.jpg')] bg-cover bg-center" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
+
+      <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between">
         <Link href="/" className="shrink-0">
           <Logo />
-          <span className="ml-10 block text-xs font-medium text-[var(--fg-muted)]">Verified Recruitment Platform</span>
+          <span className="ml-10 block text-xs font-medium text-white/80">Verified Recruitment Platform</span>
         </Link>
         <ThemeToggle />
       </header>
 
-      <section className="mx-auto mt-8 max-w-5xl">
-        <form onSubmit={handleSubmit(onSubmit)} className="wire-panel overflow-hidden">
+      <section className="relative z-10 mx-auto mt-8 max-w-5xl">
+        <form onSubmit={handleSubmit(onSubmit)} className="wire-panel overflow-hidden border-white/20 bg-white/92 backdrop-blur-sm dark:bg-[rgb(21_23_22_/_0.9)]">
           <h1 className="wire-title flex items-center gap-2 text-lg normal-case">
             Applicant Account Creation
           </h1>
@@ -107,6 +110,7 @@ export default function RegisterPage() {
             <div>
               <PasswordInput {...register("password")} className="wire-field rounded-none" placeholder="***" />
               <Err name="password" />
+              <p className="mt-1 text-xs text-[var(--fg-muted)]">Use 12+ characters with upper/lowercase letters, a number, and a symbol.</p>
             </div>
 
             <label className="label">Confirm Password:</label>

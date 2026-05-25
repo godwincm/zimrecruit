@@ -12,7 +12,6 @@ export const institutionsRouter = Router();
 const CreateInstSchema = z.object({
   name:          z.string().min(3).max(200),
   category:      z.enum(["zrp", "medical", "education"]),
-  walletAddress: z.string().regex(/^0x[0-9a-fA-F]{40}$/, "Invalid Ethereum wallet address"),
   contactEmail:  z.string().email(),
 });
 
@@ -38,15 +37,15 @@ institutionsRouter.post(
   requireAuth, requireRole("admin"),
   validate(CreateInstSchema),
   asyncHandler(async (req, res) => {
-    const { name, category, walletAddress, contactEmail } = req.body;
+    const { name, category, contactEmail } = req.body;
     const id = uuidv4();
 
     await db.execute(
-      "INSERT INTO institutions (id, name, category, wallet_address, contact_email) VALUES (?, ?, ?, ?, ?)",
-      [id, name, category, walletAddress.toLowerCase(), contactEmail]
+      "INSERT INTO institutions (id, name, category, contact_email) VALUES (?, ?, ?, ?)",
+      [id, name, category, contactEmail]
     );
 
-    await audit.log(req, "INSTITUTION_ONBOARD", "institutions", id, { name, category, walletAddress });
+    await audit.log(req, "INSTITUTION_ONBOARD", "institutions", id, { name, category });
     res.status(201).json({ ok: true, institutionId: id });
   })
 );
@@ -88,11 +87,11 @@ institutionsRouter.post(
 
     // Ensure user has verifier role
     await db.execute(
-      "INSERT IGNORE INTO user_roles (user_id, role) VALUES (?, 'verifier')",
+      "INSERT INTO user_roles (user_id, role) VALUES (?, 'verifier') ON CONFLICT DO NOTHING",
       [userId]
     );
     await db.execute(
-      "INSERT IGNORE INTO institution_members (user_id, institution_id) VALUES (?, ?)",
+      "INSERT INTO institution_members (user_id, institution_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
       [userId, institutionId]
     );
 

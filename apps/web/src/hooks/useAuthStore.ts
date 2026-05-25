@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { api } from "../lib/api";
-import { appwriteLogin, appwriteRegister, appwriteLogout } from "../lib/appwrite";
+import { supabaseLogin, supabaseRegister, supabaseLogout } from "../lib/supabase";
 
 export type Role = "applicant" | "employer" | "verifier" | "admin";
 
@@ -35,7 +35,6 @@ export interface RegisterPayload {
   website:    string;
   institutionName: string;
   institutionCategory: string;
-  institutionWallet: string;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -48,10 +47,10 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         set({ isLoading: true });
         try {
-          const { session, jwt } = await appwriteLogin(email, password);
+          const { user: authUser, session } = await supabaseLogin(email, password);
           const { accessToken, user } = await api.auth.login({
-            appwriteUserId: session.userId,
-            appwriteJwt: jwt,
+            supabaseUserId: authUser.id,
+            supabaseAccessToken: session.access_token,
           });
           localStorage.setItem("accessToken", accessToken);
           document.cookie = `accessToken=${accessToken}; path=/; max-age=900; SameSite=Lax`;
@@ -67,15 +66,26 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { email, password, fullName, role, phone,
                   companyName, companyLocation, industry, website,
-                  institutionName, institutionCategory, institutionWallet } = data;
-          const appwriteUserId = await appwriteRegister(email, password, fullName);
+                  institutionName, institutionCategory } = data;
+          const { user: authUser, session } = await supabaseRegister(email, password, fullName);
+          if (!authUser) throw new Error("Supabase did not return a registered user.");
           await api.auth.register({
-            appwriteUserId, email, fullName, role, phone,
+            supabaseUserId: authUser.id, email, fullName, role, phone,
             companyName, companyLocation, industry, website: website || undefined,
             institutionName, institutionCategory,
-            institutionWallet: institutionWallet || undefined,
           });
-          await useAuthStore.getState().login(email, password);
+          if (session) {
+            const { accessToken, user } = await api.auth.login({
+              supabaseUserId: authUser.id,
+              supabaseAccessToken: session.access_token,
+            });
+            localStorage.setItem("accessToken", accessToken);
+            document.cookie = `accessToken=${accessToken}; path=/; max-age=900; SameSite=Lax`;
+            set({ user, accessToken, isLoading: false });
+          } else {
+            set({ isLoading: false });
+            throw new Error("Account created. Confirm your email before logging in.");
+          }
         } catch (err) {
           set({ isLoading: false });
           throw err;
@@ -83,7 +93,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        await appwriteLogout().catch(() => {});
+        await supabaseLogout().catch(() => {});
         await api.auth.logout().catch(() => {});
         localStorage.removeItem("accessToken");
         document.cookie = "accessToken=; path=/; max-age=0; SameSite=Lax";

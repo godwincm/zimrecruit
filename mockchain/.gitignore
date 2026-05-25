@@ -1,6 +1,0 @@
-artifacts/
-cache/
-deployments/
-hardhat-node.log
-node_modules/
-typechain-types/

@@ -10,7 +10,7 @@ export const usersRouter = Router();
 const UpdateProfileSchema = z.object({
   fullName:    z.string().min(2).max(150).optional(),
   phone:       z.string().max(32).optional(),
-  avatarFileId:z.string().max(64).optional(),
+  avatarFileId:z.string().max(500).optional(),
   // Applicant profile
   headline:    z.string().max(160).optional(),
   bio:         z.string().max(5000).optional(),
@@ -25,7 +25,6 @@ const UpdateProfileSchema = z.object({
   companyLocation:z.string().max(120).optional(),
   institutionName: z.string().max(200).optional(),
   institutionCategory: z.enum(["zrp", "medical", "education"]).optional(),
-  institutionWallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
   contactEmail: z.string().email().optional(),
 });
 
@@ -36,7 +35,7 @@ usersRouter.get(
   asyncHandler(async (req, res) => {
     const [userRows] = await db.query(
       `SELECT u.id, u.email, u.full_name, u.phone, u.avatar_file_id, u.is_active, u.created_at,
-              GROUP_CONCAT(ur.role) AS roles
+              string_agg(ur.role::text, ',' ORDER BY ur.role::text) AS roles
        FROM users u
        LEFT JOIN user_roles ur ON ur.user_id = u.id
        WHERE u.id = ?
@@ -80,7 +79,7 @@ usersRouter.patch(
   asyncHandler(async (req, res) => {
     const { fullName, phone, avatarFileId, headline, bio, location, skills, education, experience,
             companyName, industry, website, companyLocation,
-            institutionName, institutionCategory, institutionWallet, contactEmail } = req.body;
+            institutionName, institutionCategory, contactEmail } = req.body;
     const userId = req.user!.sub;
 
     if (fullName || phone !== undefined || avatarFileId) {
@@ -127,13 +126,12 @@ usersRouter.patch(
     if (roles.includes("verifier")) {
       await db.execute(
         `UPDATE institutions i
-         JOIN institution_members im ON im.institution_id = i.id
-         SET i.name = COALESCE(?, i.name),
-             i.category = COALESCE(?, i.category),
-             i.wallet_address = COALESCE(?, i.wallet_address),
-             i.contact_email = COALESCE(?, i.contact_email)
-         WHERE im.user_id = ?`,
-        [institutionName, institutionCategory, institutionWallet, contactEmail, userId]
+         SET name = COALESCE(?, i.name),
+             category = COALESCE(?, i.category),
+             contact_email = COALESCE(?, i.contact_email)
+         FROM institution_members im
+         WHERE im.institution_id = i.id AND im.user_id = ?`,
+        [institutionName, institutionCategory, contactEmail, userId]
       );
     }
 

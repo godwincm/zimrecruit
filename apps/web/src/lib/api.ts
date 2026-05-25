@@ -79,7 +79,8 @@ export const api = {
 
   verifications: {
     queue: () => request<{ queue: any[]; institutionId: string }>("GET", "/api/verifications/queue"),
-    approve: (id: string) => request<{ txHash: string; blockNumber: number }>("POST", `/api/verifications/${id}/approve`),
+    processed: () => request<{ requests: any[]; institutionId: string }>("GET", "/api/verifications/processed"),
+    approve: (id: string) => request<{ receiptHash: string; sequenceNumber: number }>("POST", `/api/verifications/${id}/approve`),
     reject: (id: string, reason: string) => request("POST", `/api/verifications/${id}/reject`, { reason }),
   },
 
@@ -101,6 +102,17 @@ export const api = {
 
   public: {
     verify: (hash: string) =>
-      request<{ found: boolean; attestation: any }>("GET", `/api/public/verify/${encodeURIComponent(hash)}`, undefined, { auth: false }),
+      request<{ found: boolean; valid: boolean; attestation: any }>("GET", `/api/public/verify/${encodeURIComponent(hash)}`, undefined, { auth: false }),
+  },
+
+  messages: {
+    contacts: () => request<{ contacts: any[] }>("GET", "/api/messages/contacts"),
+    conversations: () => request<{ conversations: any[] }>("GET", "/api/messages"),
+    create: (participantId: string, subject?: string) =>
+      request<{ conversationId: string }>("POST", "/api/messages", { participantId, subject }),
+    list: (conversationId: string) =>
+      request<{ messages: any[] }>("GET", `/api/messages/${conversationId}/messages`),
+    send: (conversationId: string, body: string) =>
+      request<{ id: string }>("POST", `/api/messages/${conversationId}/messages`, { body }),
   },
 };

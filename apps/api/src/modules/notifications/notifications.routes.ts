@@ -28,7 +28,7 @@ notificationsRouter.patch(
   requireAuth,
   asyncHandler(async (req, res) => {
     await db.execute(
-      "UPDATE notifications SET is_read = 1 WHERE id = ? AND recipient_id = ?",
+      "UPDATE notifications SET is_read = true WHERE id = ? AND recipient_id = ?",
       [req.params.id, req.user!.sub]
     );
     res.json({ ok: true });
@@ -41,7 +41,7 @@ notificationsRouter.patch(
   requireAuth,
   asyncHandler(async (req, res) => {
     await db.execute(
-      "UPDATE notifications SET is_read = 1 WHERE recipient_id = ?",
+      "UPDATE notifications SET is_read = true WHERE recipient_id = ?",
       [req.user!.sub]
     );
     res.json({ ok: true });

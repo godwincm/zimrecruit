@@ -38,9 +38,14 @@ export function Navbar() {
             Verify
           </Link>
           {user && (
-            <Link href={dashPath} className="rounded-lg px-3 py-2 text-[var(--fg-muted)] transition hover:bg-[var(--muted)] hover:text-[var(--fg)]">
-              Dashboard
-            </Link>
+            <>
+              <Link href={dashPath} className="rounded-lg px-3 py-2 text-[var(--fg-muted)] transition hover:bg-[var(--muted)] hover:text-[var(--fg)]">
+                Dashboard
+              </Link>
+              <Link href="/messages" className="rounded-lg px-3 py-2 text-[var(--fg-muted)] transition hover:bg-[var(--muted)] hover:text-[var(--fg)]">
+                Messages
+              </Link>
+            </>
           )}
         </div>
 
@@ -96,9 +101,14 @@ export function Navbar() {
               Verify
             </Link>
             {user && (
-              <Link onClick={() => setOpen(false)} href={dashPath} className="rounded-md px-3 py-2 text-[var(--fg-muted)] hover:bg-[var(--muted)] hover:text-[var(--fg)]">
-                Dashboard
-              </Link>
+              <>
+                <Link onClick={() => setOpen(false)} href={dashPath} className="rounded-md px-3 py-2 text-[var(--fg-muted)] hover:bg-[var(--muted)] hover:text-[var(--fg)]">
+                  Dashboard
+                </Link>
+                <Link onClick={() => setOpen(false)} href="/messages" className="rounded-md px-3 py-2 text-[var(--fg-muted)] hover:bg-[var(--muted)] hover:text-[var(--fg)]">
+                  Messages
+                </Link>
+              </>
             )}
           </div>
           <div className="mt-3 flex items-center gap-2 border-t border-[var(--border)] pt-3">

@@ -5,7 +5,7 @@ import { db } from "../../lib/db.js";
 import { requireAuth, requireRole } from "../../middleware/jwt.js";
 import { validate } from "../../middleware/validate.js";
 import { asyncHandler } from "../../middleware/errorHandler.js";
-import { sendEmailToUser } from "../../lib/mailer.js";
+import { notifyUser } from "../../lib/mailer.js";
 import * as audit from "../audit/audit.service.js";
 
 export const applicationsRouter = Router();
@@ -106,14 +106,14 @@ applicationsRouter.patch(
     await audit.log(req, "APP_STAGE_CHANGE", "applications", id, { status });
 
     if (status === "shortlisted") {
-      await sendEmailToUser("application_accepted", app.applicant_id, {
+      await notifyUser("application_accepted", app.applicant_id, {
         jobTitle: app.job_title,
         company: app.company_name,
       }).catch(console.warn);
     }
 
     if (status === "offer") {
-      await sendEmailToUser("offer_extended", app.applicant_id, {
+      await notifyUser("offer_extended", app.applicant_id, {
         jobTitle: app.job_title,
         company: app.company_name,
       }).catch(console.warn);
@@ -180,7 +180,7 @@ applicationsRouter.post(
     await audit.log(req, "INTERVIEW_SCHEDULE", "interviews", id, { applicationId, scheduledAt });
 
     const formattedDate = new Date(scheduledAt).toLocaleString("en-ZW", { timeZone: "Africa/Harare" });
-    await sendEmailToUser("interview_scheduled", app.applicant_id, {
+    await notifyUser("interview_scheduled", app.applicant_id, {
       jobTitle: app.job_title,
       company: app.company_name,
       scheduledAt: formattedDate,

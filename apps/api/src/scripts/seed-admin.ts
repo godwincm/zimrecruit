@@ -1,70 +1,70 @@
 import "../lib/env.js";
-import { v4 as uuidv4 } from "uuid";
-import { appwriteUsers } from "../lib/appwrite.js";
-import { db } from "../lib/db.js";
+import { getSupabaseAdmin, getSupabaseUser } from "../lib/supabase.js";
+import { accountEmailSchema, strongPasswordSchema } from "../lib/authValidation.js";
 
-const requestedAppwriteUserId = process.env.ADMIN_APPWRITE_USER_ID?.trim();
+const requestedUserId = process.env.ADMIN_SUPABASE_USER_ID?.trim();
 const email = process.env.ADMIN_EMAIL?.trim();
 const fullName = process.env.ADMIN_FULL_NAME?.trim() || "ZimRecruit Administrator";
 const phone = process.env.ADMIN_PHONE?.trim() || null;
 const password = process.env.ADMIN_PASSWORD?.trim();
 
 async function main() {
-  if (!email) {
-    throw new Error("ADMIN_EMAIL is required.");
-  }
+  if (!email) throw new Error("ADMIN_EMAIL is required.");
+  const normalizedEmail = accountEmailSchema.parse(email);
 
-  let appwriteUserId = requestedAppwriteUserId;
-  if (appwriteUserId) {
-    try {
-      await appwriteUsers.get(appwriteUserId);
-    } catch (err: any) {
-      if (!password) throw err;
-      await appwriteUsers.create(appwriteUserId, email, undefined, password, fullName);
+  let userId = requestedUserId;
+  if (userId) {
+    const authUser = await getSupabaseUser(userId);
+    if ((authUser.email ?? "").trim().toLowerCase() !== normalizedEmail) {
+      throw new Error("ADMIN_EMAIL does not match the existing Supabase Auth user.");
+    }
+    if (!authUser.email_confirmed_at) {
+      throw new Error("The selected Supabase administrator must confirm their email first.");
     }
   } else {
     if (!password) {
-      throw new Error("Set ADMIN_APPWRITE_USER_ID for an existing Appwrite user, or set ADMIN_PASSWORD so the script can create one.");
+      throw new Error("Set ADMIN_SUPABASE_USER_ID for an existing Supabase user, or ADMIN_PASSWORD to create one.");
     }
-    appwriteUserId = uuidv4();
-    await appwriteUsers.create(appwriteUserId, email, undefined, password, fullName);
+    const validatedPassword = strongPasswordSchema.parse(password);
+    const { data, error } = await getSupabaseAdmin().auth.admin.createUser({
+      email: normalizedEmail,
+      password: validatedPassword,
+      email_confirm: true,
+      user_metadata: { full_name: fullName },
+    });
+    if (error || !data.user) throw error ?? new Error("Could not create administrator in Supabase Auth.");
+    userId = data.user.id;
   }
 
-  const [existingRows] = await db.query(
-    "SELECT id FROM users WHERE appwrite_id = ? OR email = ? LIMIT 1",
-    [appwriteUserId, email]
-  );
-  const existing = (existingRows as Array<{ id: string }>)[0];
-  const userId = existing?.id ?? uuidv4();
+  const supabase = getSupabaseAdmin();
+  const { data: existingProfile, error: profileReadError } = await supabase
+    .from("users")
+    .select("phone")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileReadError) throw profileReadError;
 
-  await db.transaction(async (conn) => {
-    if (existing) {
-      await conn.execute(
-        `UPDATE users
-         SET appwrite_id = ?, email = ?, full_name = ?, phone = COALESCE(?, phone), is_active = 1
-         WHERE id = ?`,
-        [appwriteUserId, email, fullName, phone, userId]
-      );
-    } else {
-      await conn.execute(
-        `INSERT INTO users (id, appwrite_id, email, full_name, phone)
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, appwriteUserId, email, fullName, phone]
-      );
-    }
+  const { error: userError } = await supabase
+    .from("users")
+    .upsert({
+      id: userId,
+      supabase_user_id: userId,
+      email: normalizedEmail,
+      full_name: fullName,
+      phone: phone ?? existingProfile?.phone ?? null,
+      is_active: true,
+    }, { onConflict: "id" });
+  if (userError) throw userError;
 
-    await conn.execute(
-      "INSERT IGNORE INTO user_roles (user_id, role) VALUES (?, 'admin')",
-      [userId]
-    );
-  });
+  const { error: roleError } = await supabase
+    .from("user_roles")
+    .upsert({ user_id: userId, role: "admin" }, { onConflict: "user_id,role" });
+  if (roleError) throw roleError;
 
-  console.log(`Admin ready: ${email} (${userId})`);
+  console.log(`Admin ready: ${normalizedEmail} (${userId})`);
 }
 
 main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
   process.exitCode = 1;
-}).finally(async () => {
-  await db.close().catch(() => undefined);
 });

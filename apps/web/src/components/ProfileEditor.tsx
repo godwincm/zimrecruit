@@ -7,7 +7,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { AppIcon, Card, Spinner } from "@/components/ui";
 import { useAuthStore, type Role } from "@/hooks/useAuthStore";
 import { api } from "@/lib/api";
-import { getMediaPreviewUrl, uploadMedia } from "@/lib/appwrite";
+import { getMediaPreviewUrl, uploadMedia } from "@/lib/supabase";
 
 interface NavItem {
   href: string;
@@ -35,7 +35,12 @@ export function ProfileEditor({ role, title, subtitle, nav }: ProfileEditorProps
     api.me.get().then(({ user: loadedUser, profile: loadedProfile }: { user: any; profile: any }) => {
       const p = loadedProfile ?? {};
       setProfile(p);
-      setAvatarPreview(p.avatarPreviewUrl ?? getMediaPreviewUrl(loadedUser.avatar_file_id ?? loadedUser.avatarFileId));
+      const storedAvatar = loadedUser.avatar_file_id ?? loadedUser.avatarFileId;
+      if (p.avatarPreviewUrl) {
+        setAvatarPreview(p.avatarPreviewUrl);
+      } else {
+        getMediaPreviewUrl(storedAvatar).then(setAvatarPreview).catch(() => setAvatarPreview(""));
+      }
       reset({
         fullName: loadedUser.full_name ?? loadedUser.fullName ?? "",
         phone: loadedUser.phone ?? "",
@@ -47,7 +52,6 @@ export function ProfileEditor({ role, title, subtitle, nav }: ProfileEditorProps
         website: p.website ?? "",
         institutionName: p.institution_name ?? p.name ?? "",
         institutionCategory: p.category ?? "education",
-        institutionWallet: p.wallet_address ?? "",
         contactEmail: p.contact_email ?? loadedUser.email ?? "",
       });
     }).finally(() => setLoading(false));
@@ -68,8 +72,8 @@ export function ProfileEditor({ role, title, subtitle, nav }: ProfileEditorProps
     }
     setUploading(true);
     try {
-      const { fileId, previewUrl } = await uploadMedia(file);
-      setValue("avatarFileId", fileId);
+      const { storagePath, previewUrl } = await uploadMedia(file);
+      setValue("avatarFileId", storagePath);
       setAvatarPreview(previewUrl);
       toast.success("Profile picture ready. Save to apply it.");
     } catch (err: any) {
@@ -192,10 +196,6 @@ export function ProfileEditor({ role, title, subtitle, nav }: ProfileEditorProps
                   <div>
                     <label className="label">Contact Email</label>
                     <input {...register("contactEmail")} className="wire-field w-full" placeholder="records@example.co.zw" />
-                  </div>
-                  <div>
-                    <label className="label">Verifier Wallet</label>
-                    <input {...register("institutionWallet")} className="wire-field w-full font-mono" placeholder="0x..." />
                   </div>
                 </>
               )}

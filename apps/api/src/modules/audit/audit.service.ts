@@ -64,9 +64,10 @@ export async function log(
     ?? req.socket.remoteAddress
     ?? "unknown";
 
-  const createdAt = new Date().toISOString();
+  const createdAt = new Date();
+  const createdAtForHash = createdAt.toISOString();
   const prevHash  = await getLastRowHash();
-  const rowHash   = computeRowHash(prevHash, { actorId, actorRole, action, entity, entityId, metadata, ipAddress }, createdAt);
+  const rowHash   = computeRowHash(prevHash, { actorId, actorRole, action, entity, entityId, metadata, ipAddress }, createdAtForHash);
 
   await db.execute(
     `INSERT INTO audit_logs

@@ -10,7 +10,7 @@ const ADMIN_EXTRA_NAV = [
   { href: "/admin/system-health", label: "System Health", icon: "Health" },
   { href: "/admin/fraud-warnings", label: "Fraud Warnings", icon: "Warn" },
   { href: "/admin/companies", label: "Companies", icon: "Co" },
-  { href: "/admin/smart-contracts", label: "Smart Contracts", icon: "Chain" },
+  { href: "/admin/supabase-ledger", label: "Supabase Ledger", icon: "Chain" },
 ];
 
 const NAV = [
@@ -184,7 +184,7 @@ export default function AuditLogPage() {
                           </div>
                           <div>
                             <span className="font-semibold text-[var(--fg)]">Row Hash (sha256)</span>
-                            <div className="mt-1 font-mono text-[var(--fg-muted)] break-all">{log.row_hash ?? log.tx_hash ?? "-"}</div>
+                            <div className="mt-1 font-mono text-[var(--fg-muted)] break-all">{log.row_hash ?? log.receipt_hash ?? "-"}</div>
                           </div>
                           {log.metadata && Object.keys(JSON.parse(log.metadata || "{}")).length > 0 && (
                             <div className="md:col-span-2">

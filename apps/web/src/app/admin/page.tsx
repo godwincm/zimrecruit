@@ -11,7 +11,7 @@ const ADMIN_EXTRA_NAV = [
   { href: "/admin/system-health", label: "System Health", icon: "Health" },
   { href: "/admin/fraud-warnings", label: "Fraud Warnings", icon: "Warn" },
   { href: "/admin/companies", label: "Companies", icon: "Co" },
-  { href: "/admin/smart-contracts", label: "Smart Contracts", icon: "Chain" },
+  { href: "/admin/supabase-ledger", label: "Supabase Ledger", icon: "Chain" },
 ];
 
 const NAV = [

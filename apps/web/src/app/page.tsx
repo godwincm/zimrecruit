@@ -60,7 +60,7 @@ export default function HomePage() {
                   ))}
                 </div>
                 <div className="mt-4 rounded-xl bg-[var(--muted)] p-3 font-mono text-xs text-[var(--fg-muted)]">
-                  <span className="font-bold not-italic">Local Chain - Block #114</span>
+                  <span className="font-bold not-italic">Supabase Ledger - Receipt #114</span>
                   <br />0x3fa2b9c1e91c4d8a...
                 </div>
               </div>
@@ -99,7 +99,7 @@ export default function HomePage() {
               {[
                 { n: "01", t: "Register & Profile",    d: "Sign up as applicant, employer, or institution. Role-based access from day one." },
                 { n: "02", t: "Upload Documents",      d: "Submit academic certificates, police clearances, and medical reports to your secure vault." },
-                { n: "03", t: "On-Chain Attestation",  d: "Accredited verifiers record your document proof on the local credential chain." },
+                { n: "03", t: "Receipt Attestation",  d: "Accredited verifiers record your document proof in the Supabase mockchain ledger." },
                 { n: "04", t: "Apply with Confidence", d: "Your verified profile stands out. Employers see cryptographic proof — not paper promises." },
               ].map((s, i) => (
                 <div key={i} className="card p-6">

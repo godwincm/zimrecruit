@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../../lib/db.js";
-import { sendEmailToUser } from "../../lib/mailer.js";
+import { notifyUser } from "../../lib/mailer.js";
 import { requireAuth, requireRole } from "../../middleware/jwt.js";
 import { validate } from "../../middleware/validate.js";
 import { asyncHandler } from "../../middleware/errorHandler.js";
@@ -28,12 +28,12 @@ adminRouter.get(
       params.push(role);
     }
 
-    if (status === "active") where.push("u.is_active = 1");
-    if (status === "inactive") where.push("u.is_active = 0");
+    if (status === "active") where.push("u.is_active = true");
+    if (status === "inactive") where.push("u.is_active = false");
 
     const [rows] = await db.query(
       `SELECT u.id, u.email, u.full_name, u.phone, u.avatar_file_id, u.is_active, u.created_at,
-              GROUP_CONCAT(DISTINCT ur.role ORDER BY ur.role) AS roles
+              string_agg(DISTINCT ur.role::text, ',' ORDER BY ur.role::text) AS roles
        FROM users u
        LEFT JOIN user_roles ur ON ur.user_id = u.id
        ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
@@ -62,7 +62,7 @@ adminRouter.get(
        FROM employer_profiles ep
        JOIN users u ON u.id = ep.user_id
        LEFT JOIN jobs j ON j.employer_id = ep.user_id
-       GROUP BY ep.user_id
+       GROUP BY ep.user_id, ep.company_name, ep.industry, ep.location, ep.contact_email, ep.verified, u.is_active
        ORDER BY ep.company_name ASC`
     );
 
@@ -85,7 +85,7 @@ adminRouter.post(
     const applicant = (rows as { id: string; email: string }[])[0];
     if (!applicant) return res.status(404).json({ error: "Applicant not found." });
 
-    await sendEmailToUser("admin_warning", applicant.id, {
+    await notifyUser("admin_warning", applicant.id, {
       reason: req.body.reason,
       details: req.body.details,
     });

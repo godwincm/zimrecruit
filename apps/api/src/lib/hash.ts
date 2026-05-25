@@ -13,8 +13,7 @@ export function sha256Hex(buf: Buffer): string {
 }
 
 /**
- * Convert a 0x-prefixed hex string to a bytes32 value suitable for Solidity.
- * Pads to 32 bytes if shorter; throws if the hex is malformed.
+ * Validate and normalize the application's 0x-prefixed SHA-256 receipt lookup format.
  */
 export function hexToBytes32(hex: string): string {
   const raw = hex.startsWith("0x") ? hex.slice(2) : hex;

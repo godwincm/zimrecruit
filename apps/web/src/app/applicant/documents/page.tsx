@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { AppIcon, Card, DocTypePill, Spinner, StatusPill, VerifiedBadge } from "@/components/ui";
 import { api } from "@/lib/api";
-import { uploadDocument } from "@/lib/appwrite";
+import { uploadDocument } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
 const NAV = [
@@ -36,9 +36,10 @@ export default function DocumentsPage() {
 
   const load = async () => {
     const [{ documents }, { institutions }] = await Promise.all([api.documents.list(), api.institutions.list()]);
+    const activeInstitutions = institutions.filter((item: any) => item.is_active);
     setDocs(documents);
     setInstitutions(institutions);
-    setTargetInstitutionId(institutions.find((item: any) => item.is_active)?.id ?? "");
+    setTargetInstitutionId(activeInstitutions[0]?.id ?? "");
     setLoading(false);
   };
 
@@ -61,9 +62,9 @@ export default function DocumentsPage() {
 
     setUploading(true);
     try {
-      const appwriteFileId = await uploadDocument(file);
+      const storagePath = await uploadDocument(file);
       const { documentId } = await api.documents.register({
-        appwriteFileId,
+        storagePath,
         docType,
         title: selectedType?.label ?? "Verification Document",
         issuingInstitution,
@@ -131,6 +132,9 @@ export default function DocumentsPage() {
 
             <label className="label">Send To Institution:</label>
             <select value={targetInstitutionId} onChange={(event) => setTargetInstitutionId(event.target.value)} className="wire-field">
+              {institutions.some((item) => item.is_active) ? null : (
+                <option value="">No active verifier institutions</option>
+              )}
               {institutions.filter((item) => item.is_active).map((item) => (
                 <option key={item.id} value={item.id}>{item.name} ({item.category})</option>
               ))}
@@ -163,9 +167,13 @@ export default function DocumentsPage() {
                   <tr key={doc.id}>
                     <td><DocTypePill type={doc.doc_type} /></td>
                     <td className="font-semibold">{doc.title}</td>
-                    <td>{doc.institution_name ?? "Pending assignment"}</td>
-                    <td><StatusPill status={doc.verification_status ?? "pending"} /></td>
-                    <td>{doc.verification_status === "approved" ? <VerifiedBadge /> : <span className="text-[var(--fg-muted)]">Awaiting review</span>}</td>
+                    <td>{doc.institution_name ?? "Not sent"}</td>
+                    <td><StatusPill status={doc.verification_status ?? "not_requested"} /></td>
+                    <td>
+                      {doc.verification_status === "approved" ? <VerifiedBadge /> :
+                        doc.verification_status === "rejected" ? <span className="text-red-600">{doc.verification_reason ?? "Rejected"}</span> :
+                        <span className="text-[var(--fg-muted)]">Awaiting review</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
