@@ -7,31 +7,51 @@ export const STORAGE_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ??
 
 function getJwtRole(key: string): string | null {
   const payload = key.split(".")[1];
-  if (!payload || typeof atob !== "function") return null;
+  if (!payload) return null;
 
   try {
-    const padded = payload.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(payload.length / 4) * 4, "=");
-    return JSON.parse(atob(padded)).role ?? null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + (4 - normalized.length % 4) % 4, "=");
+
+    // If we're in a browser, use atob; in Node (tests/SSR), use Buffer.
+    const decoded = typeof atob === "function"
+      ? atob(padded)
+      : Buffer.from(padded, "base64").toString();
+    return JSON.parse(decoded).role ?? null;
   } catch {
     return null;
   }
 }
 
 function hasSafeAnonKey() {
+  if (!supabaseAnonKey || supabaseAnonKey === "replace-me" || supabaseAnonKey === "your-anon-key") {
+    return false;
+  }
   return getJwtRole(supabaseAnonKey) === "anon";
 }
 
+export const isSupabaseConfigured =
+  supabaseUrl &&
+  supabaseUrl !== "https://your-project.supabase.co" &&
+  hasSafeAnonKey();
+
 export const supabase = createClient(
-  supabaseUrl || "https://missing-project.supabase.co",
-  hasSafeAnonKey() ? supabaseAnonKey : "missing-anon-key"
+  isSupabaseConfigured ? supabaseUrl : "https://placeholder.supabase.co",
+  isSupabaseConfigured ? supabaseAnonKey : "placeholder-anon-key"
 );
 
 function assertSupabaseConfigured() {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase URL and anonymous key must be configured.");
+  if (!supabaseUrl || supabaseUrl === "https://your-project.supabase.co") {
+    throw new Error("Supabase URL is not configured. Please set NEXT_PUBLIC_SUPABASE_URL in your .env file.");
+  }
+  if (!supabaseAnonKey || supabaseAnonKey === "replace-me" || supabaseAnonKey === "your-anon-key") {
+    throw new Error("Supabase anonymous key is not configured. Please set NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env file.");
+  }
+  if (getJwtRole(supabaseAnonKey) === "service_role") {
+    throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY must be the Supabase anon key, not the service role key.");
   }
   if (!hasSafeAnonKey()) {
-    throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY must be the Supabase anon key, not the service role key.");
+    throw new Error("Supabase configuration is invalid or the anon key is malformed.");
   }
 }
 
